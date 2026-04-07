@@ -332,7 +332,7 @@ ${dateOk && timeOk && seatOk ? `
   <input type="tel" id="f-phone" placeholder="090-0000-0000" value="${esc(form.phone)}" />
   <label>人数</label>
   <select id="f-people">
-    ${[1,2,3,4].map(n=>`<option${form.people==n?' selected':''}>${n}</option>`).join('')}
+    ${(()=>{ const cap=(SEATS.find(s=>s.id===form.seat)||{cap:4}).cap; return Array.from({length:cap},(_,i)=>i+1).map(n=>`<option${form.people==n?' selected':''}>${n}</option>`).join(''); })()}
   </select>
   <div class="plate-box">
     <div class="plate-title">🍰 本日の甘いものプレート</div>
@@ -548,7 +548,12 @@ function bindEvents(){
     if(!b.disabled) b.addEventListener('click',()=>{state.form.time=b.dataset.time;state.form.seat='';render();});
   });
   document.querySelectorAll('.seat-btn[data-seat]').forEach(b=>{
-    if(!b.disabled) b.addEventListener('click',()=>{state.form.seat=b.dataset.seat;render();});
+    if(!b.disabled) b.addEventListener('click',()=>{
+      state.form.seat=b.dataset.seat;
+      const cap=(SEATS.find(s=>s.id===b.dataset.seat)||{cap:4}).cap;
+      if(parseInt(state.form.people)>cap) state.form.people=String(cap);
+      render();
+    });
   });
 
   on('submit-btn','click',async()=>{
