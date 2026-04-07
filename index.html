@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>お茶と甘いもの　あまらんす　ご予約</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#faf9f7;color:#1a1a1a}
+.app{max-width:600px;margin:0 auto;padding:1rem}
+.tab-bar{display:flex;gap:8px;margin-bottom:1.5rem;border-bottom:1px solid #e5e5e5;padding-bottom:0}
+.tab{padding:8px 16px;font-size:14px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:#888;font-weight:400}
+.tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a;font-weight:500}
+.section-title{font-size:18px;font-weight:500;margin-bottom:1rem;color:#1a1a1a}
+.card{background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+label{font-size:13px;color:#666;display:block;margin-bottom:4px}
+input,select,textarea{width:100%;padding:8px 10px;font-size:14px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;margin-bottom:12px;font-family:inherit}
+textarea{resize:vertical;min-height:60px}
+.btn{padding:10px 20px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;font-size:14px;cursor:pointer;font-weight:500}
+.btn:hover{background:#f5f5f5}
+.btn-primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.btn-primary:hover{opacity:0.85}
+.btn-danger{border-color:#e24b4a;color:#e24b4a}
+.btn-danger:hover{background:#fff5f5}
+.btn-sm{padding:4px 10px;font-size:12px}
+.seat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.seat-btn{padding:10px 6px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;font-size:13px;cursor:pointer;text-align:center}
+.seat-btn:hover{background:#f5f5f5}
+.seat-btn.selected{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.seat-btn.full{background:#fff0f0;color:#e24b4a;border-color:#f5c2c2;cursor:not-allowed;opacity:0.7}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;margin-left:6px}
+.badge-ok{background:#e8f5f0;color:#1d9e75}
+.badge-full{background:#fff0f0;color:#e24b4a}
+.res-card{background:#f7f7f7;border-radius:8px;padding:12px 14px;margin-bottom:8px;font-size:13px}
+.res-card.hold-card{background:#fff8ec;border:1px solid #ffe9b3}
+.res-card .res-header{font-weight:500;margin-bottom:4px;color:#1a1a1a}
+.res-card .res-detail{color:#666;line-height:1.6}
+.lock-overlay{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem}
+.pin-input{width:140px;text-align:center;font-size:24px;letter-spacing:8px;margin:1rem 0;border-radius:8px;border:1px solid #ddd;padding:10px}
+.time-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.time-btn{padding:10px 6px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;font-size:13px;cursor:pointer;text-align:center}
+.time-btn:hover{background:#f5f5f5}
+.time-btn.selected{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.time-btn.full{background:#fff0f0;color:#e24b4a;cursor:not-allowed;opacity:0.7}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.toggle{position:relative;width:40px;height:22px;display:inline-block}
+.toggle input{opacity:0;width:0;height:0}
+.slider-t{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:22px;transition:.2s}
+.slider-t:before{position:absolute;content:"";height:16px;width:16px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.2s}
+input:checked+.slider-t{background:#1d9e75}
+input:checked+.slider-t:before{transform:translateX(18px)}
+.msg{padding:12px;border-radius:8px;margin:8px 0;font-size:13px}
+.msg-ok{background:#e8f5f0;color:#1d9e75}
+.msg-err{background:#fff0f0;color:#e24b4a}
+.msg-info{background:#f0f4ff;color:#3a5bd9}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem}
+.metric{background:#f7f7f7;border-radius:8px;padding:12px;text-align:center}
+.metric-n{font-size:24px;font-weight:500;color:#1a1a1a}
+.metric-l{font-size:12px;color:#888;margin-top:2px}
+.info-box{background:#f5f9ff;border:1px solid #c8ddf5;border-radius:10px;padding:12px 14px;margin-bottom:1rem;font-size:13px;color:#2a4a7a;line-height:1.65}
+.notice-box{background:#fff8ec;border:1px solid #ffe9b3;border-radius:10px;padding:12px 14px;margin-bottom:1rem;font-size:13px;color:#7a5c00}
+.notice-box strong{font-weight:600}
+.plate-box{background:#faf5ff;border:1px solid #e9d8ff;border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:13px;color:#4a2d7a;line-height:1.6}
+.plate-box .plate-title{font-weight:600;margin-bottom:4px;font-size:12px;color:#7a5ca0;text-transform:uppercase;letter-spacing:.5px}
+.date-chip-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.date-chip{padding:8px 14px;border:1px solid #ddd;border-radius:20px;font-size:13px;background:#fff;cursor:pointer;color:#1a1a1a}
+.date-chip:hover{background:#f5f5f5}
+.date-chip.selected{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.date-chip.locked{background:#f7f7f7;color:#bbb;border-color:#eee;cursor:not-allowed}
+.avail-date-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.avail-date-item:last-child{border-bottom:none}
+.hold-form{background:#fff8ec;border:1px solid #ffe9b3;border-radius:10px;padding:14px;margin-bottom:1rem}
+.hold-form label{color:#7a5c00}
+.hold-form input,.hold-form select,.hold-form textarea{border-color:#ffe9b3}
+</style>
+</head>
+<body>
+<div class="app" id="root"></div>
+
+<script>
+// ─── Google Apps Script URL ─────────────────────────────
+// デプロイ後にここを書き換えてください
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwrhSik-h9334tv0AlMH4ss9cNYUyIvFa2r2-vX0xjPBpTeI5rL7h59xQzqlZxhvdHW/exec';
+
+// ─── 定数 ───────────────────────────────────────────────
+const PLATE_LIMIT = 15; // ほぼすべてプレートの1日上限
+
+const SEATS = [
+  {id:'s1',  label:'1人席',  cap:1},
+  {id:'s2a', label:'2人席 A',cap:2},
+  {id:'s2b', label:'2人席 B',cap:2},
+  {id:'s2c', label:'2人席 C',cap:2},
+  {id:'s4',  label:'4人席',  cap:4},
+];
+const TIMES = ['9:30','12:30','14:30'];
+// PIN 2773 の SHA-256 ハッシュ
+const PIN_HASH = 'ce121073a5210988d0d44892ed9597a853b6f7384ef3887c0c4c229dbabb4691';
+
+// ─── 状態 ────────────────────────────────────────────────
+let state = {
+  tab: 'guest',
+  adminUnlocked: false,
+  pinInput: '',
+  pinError: false,
+  form: {date:'',time:'',seat:'',name:'',phone:'',people:'1',note:'',plateOrder:false},
+  formMsg: '',
+  formMsgType: '',
+  reservations: [],      // {id,date,time,seat,seatLabel,name,phone,people,note,isHold?}
+  plateCounts: {},       // {date: count}  GASから取得したほぼプレート注文数
+  closedDates: {},       // {date: true}
+  fullSlots: {},         // {'date|time|seat': true}
+  availableDates: [],    // ['2026-04-14', ...]  管理者が設定した予約可能日
+  sweetPlateDesc: 'ほぼすべてのメニューの控えめsizeを載せたプレートでございます',
+  adminTab: 'list',
+  selectedAdminDate: '',
+  holdForm: {date:'',time:'',seat:'',label:'スタッフ確保',people:'1'},
+  holdFormOpen: false,
+  newAvailDate: '',
+};
+
+// ─── ストレージ ──────────────────────────────────────────
+// 設定系（closedDates, fullSlots, availableDates, sweetPlateDesc）は
+// localStorage に保存。予約データは GAS スプレッドシートで管理。
+function saveSettings(){
+  try{
+    localStorage.setItem('amaranth_settings', JSON.stringify({
+      closedDates:   state.closedDates,
+      fullSlots:     state.fullSlots,
+      availableDates:state.availableDates,
+      sweetPlateDesc:state.sweetPlateDesc,
+    }));
+  }catch(e){}
+}
+// 後方互換 alias
+function save(){ saveSettings(); }
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem('amaranth_settings');
+    if(raw){
+      const d = JSON.parse(raw);
+      state.closedDates    = d.closedDates    || {};
+      state.fullSlots      = d.fullSlots      || {};
+      state.availableDates = d.availableDates || [];
+      if(d.sweetPlateDesc !== undefined) state.sweetPlateDesc = d.sweetPlateDesc;
+    }
+  }catch(e){}
+  // GAS から予約済みスロットを取得して重複チェックに使う
+  fetchBookedSlots().finally(()=>render());
+}
+
+// GAS から予約済みスロット一覧を取得
+async function fetchBookedSlots(){
+  if(!GAS_URL || GAS_URL.startsWith('ここに')) return;
+  try{
+    const res = await fetch(GAS_URL, { redirect: 'follow' });
+    const json = await res.json();
+    if(json.success){
+      if(json.slots){
+        state.reservations = json.slots.map(s=>({
+          date: s.date, time: s.time, seat: s.seat, id: `${s.date}|${s.time}|${s.seat}`
+        }));
+      }
+      if(json.plateCounts) state.plateCounts = json.plateCounts;
+    }
+  }catch(e){}
+}
+
+// ─── ユーティリティ ──────────────────────────────────────
+function getTodayStr(){
+  return new Date().toISOString().slice(0,10);
+}
+
+function slotKey(date,time,seat){ return `${date}|${time}|${seat}`; }
+
+function isFull(date,time,seat){
+  return !!state.fullSlots[slotKey(date,time,seat)];
+}
+
+function isDateClosed(date){ return !!state.closedDates[date]; }
+
+function getReservationsFor(date){
+  return state.reservations.filter(r=>r.date===date);
+}
+
+// SHA-256 (Web Crypto API)
+async function sha256(str){
+  const enc = new TextEncoder();
+  const buf = await crypto.subtle.digest('SHA-256', enc.encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// 予約可能日かどうか
+function isDateAvailable(dateStr){
+  return state.availableDates.includes(dateStr) && !isDateClosed(dateStr);
+}
+
+// 次回予約受付開始日時を計算
+// 予約可能日の前週火曜 19:00 が受付開始
+function getNextOpeningInfo(){
+  const now = new Date();
+  const today = getTodayStr();
+  const upcoming = state.availableDates
+    .filter(d => d >= today)
+    .sort();
+  if(!upcoming.length) return null;
+  const nextDate = upcoming[0]; // 最近の予約可能日 (例: 月曜)
+  // その前週の火曜 = nextDate - 6日
+  const mondayDate = new Date(nextDate + 'T00:00:00');
+  const tuesdayBefore = new Date(mondayDate);
+  tuesdayBefore.setDate(mondayDate.getDate() - 6);
+  tuesdayBefore.setHours(19, 0, 0, 0);
+  return { openAt: tuesdayBefore, forDate: nextDate };
+}
+
+function formatDate(dateStr){
+  const d = new Date(dateStr + 'T00:00:00');
+  const days = ['日','月','火','水','木','金','土'];
+  return `${d.getMonth()+1}月${d.getDate()}日(${days[d.getDay()]})`;
+}
+
+// 重複チェック: 同一日・時間・席に既存予約があるか
+function isDuplicate(date,time,seat){
+  return state.reservations.some(r => r.date===date && r.time===time && r.seat===seat);
+}
+
+// ─── レンダリング ─────────────────────────────────────────
+function render(){
+  const root = document.getElementById('root');
+  if(state.tab==='guest') root.innerHTML = renderGuest();
+  else root.innerHTML = renderAdmin();
+  bindEvents();
+}
+
+function renderGuest(){
+  const {form, formMsg, formMsgType} = state;
+  const today = getTodayStr();
+
+  // 予約受付開始の告知
+  const openInfo = getNextOpeningInfo();
+  let noticeHtml = '';
+  if(openInfo){
+    const now = new Date();
+    const o = openInfo.openAt;
+    const already = now >= o;
+    const mm = String(o.getMonth()+1).padStart(2,'0');
+    const dd = String(o.getDate()).padStart(2,'0');
+    const days = ['日','月','火','水','木','金','土'];
+    const day = days[o.getDay()];
+    if(!already){
+      noticeHtml = `<div class="notice-box">📅 <strong>${mm}月${dd}日(${day}) 19:00</strong> から ${formatDate(openInfo.forDate)} 分のご予約を受け付けます</div>`;
+    }
+  }
+
+  // 予約可能日チップ (今日以降)
+  const futureDates = state.availableDates.filter(d => d >= today).sort();
+
+  // 選択中の日付が有効かチェック
+  const dateOk = form.date && isDateAvailable(form.date);
+  const timeOk = form.time;
+  const seatOk = form.seat;
+
+  let dateSection = '';
+  if(futureDates.length > 0){
+    const chips = futureDates.map(d => {
+      const closed = isDateClosed(d);
+      // 受付開始前かチェック
+      const oInfo = { openAt: (() => {
+        const mon = new Date(d+'T00:00:00');
+        const tue = new Date(mon); tue.setDate(mon.getDate()-6); tue.setHours(19,0,0,0);
+        return tue;
+      })() };
+      const notYet = new Date() < oInfo.openAt;
+      const cls = closed ? 'date-chip locked' : (notYet ? 'date-chip locked' : (form.date===d ? 'date-chip selected' : 'date-chip'));
+      const label = formatDate(d);
+      const sub = closed ? '休業' : (notYet ? '受付前' : '');
+      return `<button class="${cls}" data-pick="${d}" ${(closed||notYet)?'disabled':''}>${label}${sub?`<br><span style="font-size:10px">${sub}</span>`:''}`;
+    }).join('');
+    dateSection = `
+<div class="card">
+  <label>営業日を選択</label>
+  <div class="date-chip-grid">${chips}</div>
+  ${form.date && isDateClosed(form.date) ? '<div class="msg msg-err">この日はお休みです</div>' : ''}
+  ${form.date && !isDateAvailable(form.date) && !isDateClosed(form.date) ? '<div class="msg msg-err">この日は予約受付前です</div>' : ''}
+</div>`;
+  } else {
+    dateSection = `<div class="card"><p style="font-size:13px;color:#888;text-align:center;padding:8px">現在、受付中の営業日はありません<br>次回受付開始をお待ちください</p></div>`;
+  }
+
+  return `
+<div class="tab-bar">
+  <button class="tab active">ご予約</button>
+  <button class="tab" id="go-admin">管理者</button>
+</div>
+<p class="section-title">お茶と甘いもの　あまらんす　ご予約</p>
+<div class="info-box">
+  <p><strong>【お願いとお知らせ】</strong>「ほぼすべてのプレート」は数に限りがございます。また、大変恐縮ながら単品でのご所望のお品が品切れの場合もございますことご承知願いたく存じます。</p>
+  <p style="margin-top:6px">🕐 「ほぼすべてプレート」のご注文は<strong>前日まで</strong>にいただけますと幸いでございます。</p>
+</div>
+${noticeHtml}
+${dateSection}
+${dateOk ? `
+<div class="card">
+  <label>時間帯</label>
+  <div class="time-grid">
+    ${TIMES.map(t=>{
+      const full = state.fullSlots[`${form.date}|${t}|ALL`];
+      const dup = !full && isDuplicate(form.date, t, form.seat) && form.seat;
+      return `<button class="time-btn${form.time===t?' selected':''}${full?' full':''}" data-time="${t}" ${full?'disabled':''}>${t}${full?'<br><span style="font-size:10px">満席</span>':''}</button>`;
+    }).join('')}
+  </div>
+</div>` : ''}
+${dateOk && timeOk ? `
+<div class="card">
+  <label>お席</label>
+  <div class="seat-grid">
+    ${SEATS.map(s=>{
+      const full = isFull(form.date,form.time,s.id);
+      return `<button class="seat-btn${form.seat===s.id?' selected':''}${full?' full':''}" data-seat="${s.id}" ${full?'disabled':''}>${s.label}<br><span style="font-size:11px;color:inherit">${s.cap}名</span></button>`;
+    }).join('')}
+  </div>
+</div>` : ''}
+${dateOk && timeOk && seatOk ? `
+<div class="card">
+  <label>お名前</label>
+  <input type="text" id="f-name" placeholder="山田 花子" value="${esc(form.name)}" />
+  <label>お電話番号</label>
+  <input type="tel" id="f-phone" placeholder="090-0000-0000" value="${esc(form.phone)}" />
+  <label>人数</label>
+  <select id="f-people">
+    ${[1,2,3,4].map(n=>`<option${form.people==n?' selected':''}>${n}</option>`).join('')}
+  </select>
+  <div class="plate-box">
+    <div class="plate-title">🍰 本日の甘いものプレート</div>
+    ${esc(state.sweetPlateDesc)}
+  </div>
+  ${(()=>{
+    const cnt = state.plateCounts[form.date] || 0;
+    const remaining = PLATE_LIMIT - cnt;
+    const soldOut = remaining <= 0;
+    return `<div style="margin-bottom:12px;padding:10px 12px;border:1px solid ${soldOut?'#f5c2c2':'#c8e6c9'};border-radius:8px;background:${soldOut?'#fff0f0':'#f1f8e9'}">
+      <label style="display:flex;align-items:center;gap:10px;cursor:${soldOut?'not-allowed':'pointer'};margin-bottom:0">
+        <input type="checkbox" id="f-plate" ${form.plateOrder?'checked':''} ${soldOut?'disabled':''} style="width:18px;height:18px;margin:0;cursor:${soldOut?'not-allowed':'pointer'}" />
+        <span style="font-size:14px;color:${soldOut?'#999':'#1a1a1a'}">「ほぼすべてプレート」を注文する</span>
+        <span style="font-size:12px;font-weight:500;color:${soldOut?'#e24b4a':'#1d9e75'};margin-left:auto;white-space:nowrap">${soldOut?'本日受付終了':'残り '+remaining+' 件'}</span>
+      </label>
+    </div>`;
+  })()}
+  <label>アレルギー・苦手なもの・その他メモ</label>
+  <textarea id="f-note" placeholder="アレルギーや苦手なものがあればお書きください">${esc(form.note)}</textarea>
+  ${formMsg?`<div class="msg msg-${formMsgType}">${formMsg}</div>`:''}
+  <button class="btn btn-primary" id="submit-btn" style="width:100%">予約を確定する</button>
+</div>` : ''}
+`;
+}
+
+function renderAdmin(){
+  if(!state.adminUnlocked) return renderPinScreen();
+  return renderAdminPanel();
+}
+
+function renderPinScreen(){
+  return `
+<div class="tab-bar">
+  <button class="tab" id="go-guest">ご予約</button>
+  <button class="tab active">管理者</button>
+</div>
+<div class="lock-overlay">
+  <p class="section-title" style="text-align:center">管理者ログイン</p>
+  <p style="font-size:13px;color:#888;margin-bottom:1rem">PINコードを入力してください</p>
+  <input class="pin-input" type="password" inputmode="numeric" maxlength="4" id="pin-field" placeholder="••••" value="${state.pinInput}" />
+  ${state.pinError?'<div class="msg msg-err">PINコードが違います</div>':''}
+  <button class="btn btn-primary" id="pin-submit" style="margin-top:8px">ログイン</button>
+</div>`;
+}
+
+function renderAdminPanel(){
+  const tabs = ['list','hold','dates','settings'];
+  const tabLabels = {'list':'予約一覧','hold':'席確保','dates':'予約可能日','settings':'設定'};
+  return `
+<div class="tab-bar">
+  <button class="tab" id="go-guest">ご予約</button>
+  <button class="tab active">管理者</button>
+</div>
+<div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap">
+  ${tabs.map(t=>`<button class="btn${state.adminTab===t?' btn-primary':''}" data-atab="${t}">${tabLabels[t]}</button>`).join('')}
+  <button class="btn btn-danger" id="logout" style="margin-left:auto">ログアウト</button>
+</div>
+${state.adminTab==='list'     ? renderAdminList()     : ''}
+${state.adminTab==='hold'     ? renderAdminHold()     : ''}
+${state.adminTab==='dates'    ? renderAdminDates()    : ''}
+${state.adminTab==='settings' ? renderAdminSettings() : ''}`;
+}
+
+function renderAdminList(){
+  const today = getTodayStr();
+  const dateToShow = state.selectedAdminDate || today;
+  const resList = getReservationsFor(dateToShow);
+  const total = resList.reduce((a,r)=>a+parseInt(r.people||1),0);
+
+  return `
+<div class="card">
+  <label>日付を選択</label>
+  <input type="date" id="admin-date" value="${dateToShow}" />
+</div>
+<div class="summary-grid">
+  <div class="metric"><div class="metric-n">${resList.length}</div><div class="metric-l">予約件数</div></div>
+  <div class="metric"><div class="metric-n">${total}</div><div class="metric-l">合計人数</div></div>
+</div>
+${resList.length===0?'<p style="color:#888;font-size:13px;text-align:center;padding:1rem">この日の予約はありません</p>':''}
+${resList.map((r)=>`
+<div class="res-card">
+  <div class="res-header">${r.time}　${esc(r.seatLabel||'')}　${r.people}名　<span style="font-weight:400">${esc(r.name)}</span></div>
+  <div class="res-detail">${r.phone?'TEL: '+esc(r.phone):''}${r.note?'<br>注文メモ: '+esc(r.note):''}</div>
+  <button class="btn btn-danger btn-sm" style="margin-top:8px" data-cancel-id="${r.id}">キャンセル</button>
+</div>`).join('')}`;
+}
+
+function renderAdminHold(){
+  const hf = state.holdForm;
+  return `
+<div class="card">
+  <p style="font-size:14px;font-weight:500;margin-bottom:12px">🔒 スタッフ用席確保</p>
+  <p style="font-size:12px;color:#888;margin-bottom:12px">お客様の予約フォームには表示されず、席を事前にブロックできます</p>
+  <label>日付</label>
+  <input type="date" id="hold-date" value="${hf.date}" min="${getTodayStr()}" />
+  <label>時間帯</label>
+  <div class="time-grid">
+    ${TIMES.map(t=>`<button class="time-btn${hf.time===t?' selected':''}" data-hold-time="${t}">${t}</button>`).join('')}
+  </div>
+  <label>席</label>
+  <div class="seat-grid">
+    ${SEATS.map(s=>`<button class="seat-btn${hf.seat===s.id?' selected':''}" data-hold-seat="${s.id}">${s.label}<br><span style="font-size:11px">${s.cap}名</span></button>`).join('')}
+  </div>
+  <label>確保名称</label>
+  <input type="text" id="hold-label" value="${esc(hf.label)}" placeholder="スタッフ確保・撮影用など" />
+  <label>人数</label>
+  <select id="hold-people">
+    ${[1,2,3,4].map(n=>`<option${hf.people==n?' selected':''}>${n}</option>`).join('')}
+  </select>
+  <button class="btn btn-primary" id="hold-submit" style="width:100%;margin-top:4px">この席を確保する</button>
+  ${state.holdMsg?`<div class="msg msg-${state.holdMsgType}" style="margin-top:8px">${state.holdMsg}</div>`:''}
+</div>`;
+}
+
+function renderAdminDates(){
+  const today = getTodayStr();
+  const sorted = [...state.availableDates].sort();
+  return `
+<div class="card">
+  <p style="font-size:14px;font-weight:500;margin-bottom:12px">📅 予約可能日の管理</p>
+  <p style="font-size:12px;color:#888;margin-bottom:12px">追加した日付のみゲストが予約できます。<br>予約受付は各日の前週火曜 19:00 に自動で開きます。</p>
+  <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:12px">
+    <div style="flex:1">
+      <label>日付を追加</label>
+      <input type="date" id="new-avail-date" value="${state.newAvailDate}" min="${today}" style="margin-bottom:0"/>
+    </div>
+    <button class="btn btn-primary" id="add-avail-date" style="white-space:nowrap;padding:8px 14px">追加</button>
+  </div>
+  ${sorted.length===0?'<p style="font-size:13px;color:#888;text-align:center;padding:8px">まだ予約可能日が設定されていません</p>':''}
+  ${sorted.map(d=>`
+  <div class="avail-date-item">
+    <span>${formatDate(d)}</span>
+    <button class="btn btn-danger btn-sm" data-remove-date="${d}">削除</button>
+  </div>`).join('')}
+</div>`;
+}
+
+function renderAdminSettings(){
+  const today = getTodayStr();
+  const dateToShow = state.selectedAdminDate || today;
+  const closed = isDateClosed(dateToShow);
+
+  return `
+<div class="card">
+  <p style="font-size:14px;font-weight:500;margin-bottom:12px">🍰 本日の甘いものプレート説明</p>
+  <textarea id="sweet-plate-desc" style="margin-bottom:8px">${esc(state.sweetPlateDesc)}</textarea>
+  <button class="btn btn-primary btn-sm" id="save-plate-desc">保存</button>
+  ${state.plateMsg?`<div class="msg msg-ok" style="margin-top:8px">${state.plateMsg}</div>`:''}
+</div>
+<div class="card">
+  <label>対象日</label>
+  <input type="date" id="admin-date2" value="${dateToShow}" />
+  <div class="toggle-row" style="margin-top:8px">
+    <span style="font-size:14px">この日を休業にする</span>
+    <label class="toggle"><input type="checkbox" id="toggle-closed" ${closed?'checked':''}><span class="slider-t"></span></label>
+  </div>
+</div>
+<div class="card">
+  <p style="font-size:14px;font-weight:500;margin-bottom:12px">時間帯・席ごとの満席設定</p>
+  <p style="font-size:12px;color:#888;margin-bottom:12px">${dateToShow}</p>
+  ${TIMES.map(t=>{
+    const allFull = !!state.fullSlots[`${dateToShow}|${t}|ALL`];
+    return `
+<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #f0f0f0">
+  <div class="toggle-row">
+    <span style="font-size:14px;font-weight:500">${t}　時間帯全体を満席</span>
+    <label class="toggle"><input type="checkbox" class="toggle-all-time" data-date="${dateToShow}" data-time="${t}" ${allFull?'checked':''}><span class="slider-t"></span></label>
+  </div>
+  ${!allFull?SEATS.map(s=>{
+    const full = isFull(dateToShow,t,s.id);
+    return `<div class="toggle-row" style="padding-left:12px">
+      <span style="font-size:13px;color:#666">${s.label}</span>
+      <label class="toggle"><input type="checkbox" class="toggle-seat" data-date="${dateToShow}" data-time="${t}" data-seat="${s.id}" ${full?'checked':''}><span class="slider-t"></span></label>
+    </div>`;
+  }).join(''):''}
+</div>`;
+  }).join('')}
+</div>`;
+}
+
+// XSS対策
+function esc(str){
+  if(!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── イベント ─────────────────────────────────────────────
+function bindEvents(){
+  const q = id => document.getElementById(id);
+  const on = (id,ev,fn) => { const el=q(id); if(el) el.addEventListener(ev,fn); };
+
+  on('go-admin','click',()=>{state.tab='admin';render();});
+  on('go-guest','click',()=>{state.tab='guest';render();});
+
+  // ゲスト: 日付チップ
+  document.querySelectorAll('[data-pick]').forEach(b=>{
+    if(!b.disabled) b.addEventListener('click',()=>{
+      state.form.date=b.dataset.pick;state.form.time='';state.form.seat='';state.formMsg='';render();
+    });
+  });
+
+  on('f-name','input',e=>{state.form.name=e.target.value;});
+  on('f-phone','input',e=>{state.form.phone=e.target.value;});
+  on('f-people','change',e=>{state.form.people=e.target.value;});
+  on('f-note','input',e=>{state.form.note=e.target.value;});
+  on('f-plate','change',e=>{state.form.plateOrder=e.target.checked;});
+
+  document.querySelectorAll('.time-btn[data-time]').forEach(b=>{
+    if(!b.disabled) b.addEventListener('click',()=>{state.form.time=b.dataset.time;state.form.seat='';render();});
+  });
+  document.querySelectorAll('.seat-btn[data-seat]').forEach(b=>{
+    if(!b.disabled) b.addEventListener('click',()=>{state.form.seat=b.dataset.seat;render();});
+  });
+
+  on('submit-btn','click',async()=>{
+    const f = state.form;
+    const seatObj = SEATS.find(s=>s.id===f.seat);
+    if(!f.date||!f.time||!f.seat||!f.name||!f.phone){
+      state.formMsg='必須項目を入力してください';state.formMsgType='err';render();return;
+    }
+    const peopleNum = parseInt(f.people);
+    if(seatObj && peopleNum > seatObj.cap){
+      state.formMsg=`${seatObj.label}は${seatObj.cap}名席です。人数を確認してください`;state.formMsgType='err';render();return;
+    }
+    // ローカル重複チェック（キャッシュ）
+    if(isDuplicate(f.date,f.time,f.seat)){
+      state.formMsg='この席はすでに予約済みです。別の席または時間帯をお選びください';state.formMsgType='err';render();return;
+    }
+
+    // 送信中表示
+    state.formMsg='送信中...';state.formMsgType='info';render();
+
+    const payload = {
+      action:'reserve',
+      date:f.date, time:f.time, seat:f.seat,
+      seatLabel: seatObj?seatObj.label:'',
+      name:f.name, phone:f.phone, people:f.people, note:f.note,
+      isHold: false,
+      plateOrder: !!f.plateOrder,
+    };
+
+    try{
+      if(GAS_URL && !GAS_URL.startsWith('ここに')){
+        const res = await fetch(GAS_URL, {
+          method:'POST',
+          body: JSON.stringify(payload),
+          redirect:'follow',
+        });
+        const json = await res.json();
+        if(!json.success){
+          state.formMsg=json.error||'予約に失敗しました';state.formMsgType='err';render();return;
+        }
+      }
+      // ローカルキャッシュにも追加
+      state.reservations.push({date:f.date,time:f.time,seat:f.seat,id:`${f.date}|${f.time}|${f.seat}`});
+      if(f.plateOrder) state.plateCounts[f.date] = (state.plateCounts[f.date]||0) + 1;
+      state.form={date:'',time:'',seat:'',name:'',phone:'',people:'1',note:'',plateOrder:false};
+      state.formMsg='ご予約を承りました。ありがとうございます 🌸';state.formMsgType='ok';
+    }catch(err){
+      state.formMsg='通信エラーが発生しました。時間をおいて再度お試しください';state.formMsgType='err';
+    }
+    render();
+  });
+
+  // PIN
+  on('pin-field','input',e=>{
+    state.pinInput=e.target.value;
+    if(state.pinInput.length===4) checkPin();
+  });
+  on('pin-submit','click',()=>checkPin());
+  on('logout','click',()=>{state.adminUnlocked=false;state.pinInput='';render();});
+
+  // 管理者タブ切替
+  document.querySelectorAll('[data-atab]').forEach(b=>{
+    b.addEventListener('click',()=>{state.adminTab=b.dataset.atab;state.holdMsg='';state.plateMsg='';render();});
+  });
+
+  // 予約一覧: キャンセル
+  on('admin-date','change',e=>{state.selectedAdminDate=e.target.value;render();});
+  document.querySelectorAll('[data-cancel-id]').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const id = parseInt(b.dataset.cancelId);
+      const target = state.reservations.find(r=>r.id===id);
+      if(target){
+        const msg = target.isHold
+          ? `${target.name} の確保枠を解除しますか？`
+          : `${target.name}様（${target.time}）の予約をキャンセルしますか？`;
+        if(confirm(msg)){
+          state.reservations = state.reservations.filter(r=>r.id!==id);
+          save();render();
+        }
+      }
+    });
+  });
+
+  // 席確保フォーム
+  on('hold-date','change',e=>{state.holdForm.date=e.target.value;render();});
+  document.querySelectorAll('[data-hold-time]').forEach(b=>{
+    b.addEventListener('click',()=>{state.holdForm.time=b.dataset.holdTime;render();});
+  });
+  document.querySelectorAll('[data-hold-seat]').forEach(b=>{
+    b.addEventListener('click',()=>{state.holdForm.seat=b.dataset.holdSeat;render();});
+  });
+  on('hold-label','input',e=>{state.holdForm.label=e.target.value;});
+  on('hold-people','change',e=>{state.holdForm.people=e.target.value;});
+  on('hold-submit','click',async()=>{
+    const hf = state.holdForm;
+    if(!hf.date||!hf.time||!hf.seat){
+      state.holdMsg='日付・時間帯・席を選択してください';state.holdMsgType='err';render();return;
+    }
+    if(isDuplicate(hf.date,hf.time,hf.seat)){
+      state.holdMsg='この席はすでに予約が入っています';state.holdMsgType='err';render();return;
+    }
+    const seatObj = SEATS.find(s=>s.id===hf.seat);
+    state.holdMsg='送信中...';state.holdMsgType='info';render();
+
+    const payload = {
+      action:'reserve',
+      date:hf.date, time:hf.time, seat:hf.seat,
+      seatLabel: seatObj?seatObj.label:'',
+      name: hf.label||'スタッフ確保',
+      phone:'', people:hf.people, note:'',
+      isHold: true,
+    };
+
+    try{
+      if(GAS_URL && !GAS_URL.startsWith('ここに')){
+        const res = await fetch(GAS_URL, {
+          method:'POST',
+          body: JSON.stringify(payload),
+          redirect:'follow',
+        });
+        const json = await res.json();
+        if(!json.success){
+          state.holdMsg=json.error||'確保に失敗しました';state.holdMsgType='err';render();return;
+        }
+      }
+      state.reservations.push({date:hf.date,time:hf.time,seat:hf.seat,id:`${hf.date}|${hf.time}|${hf.seat}`});
+      state.holdMsg=`${formatDate(hf.date)} ${hf.time} ${seatObj?seatObj.label:''} を確保しました`;
+      state.holdMsgType='ok';
+      state.holdForm={date:'',time:'',seat:'',label:'スタッフ確保',people:'1'};
+    }catch(err){
+      state.holdMsg='通信エラーが発生しました';state.holdMsgType='err';
+    }
+    render();
+  });
+
+  // 予約可能日管理
+  on('new-avail-date','change',e=>{state.newAvailDate=e.target.value;});
+  on('add-avail-date','click',()=>{
+    const d = state.newAvailDate || q('new-avail-date')?.value;
+    if(!d) return;
+    if(!state.availableDates.includes(d)){
+      state.availableDates.push(d);
+      save();
+    }
+    state.newAvailDate='';
+    render();
+  });
+  document.querySelectorAll('[data-remove-date]').forEach(b=>{
+    b.addEventListener('click',()=>{
+      state.availableDates = state.availableDates.filter(d=>d!==b.dataset.removeDate);
+      save();render();
+    });
+  });
+
+  // 設定: 甘いものプレート説明
+  on('save-plate-desc','click',()=>{
+    const val = q('sweet-plate-desc')?.value;
+    if(val !== undefined){ state.sweetPlateDesc = val; save(); state.plateMsg='保存しました'; render(); }
+  });
+  on('admin-date2','change',e=>{state.selectedAdminDate=e.target.value;render();});
+  on('toggle-closed','change',e=>{
+    const d = state.selectedAdminDate || getTodayStr();
+    if(e.target.checked) state.closedDates[d]=true;
+    else delete state.closedDates[d];
+    save();render();
+  });
+  document.querySelectorAll('.toggle-all-time').forEach(el=>{
+    el.addEventListener('change',()=>{
+      const k=`${el.dataset.date}|${el.dataset.time}|ALL`;
+      if(el.checked) state.fullSlots[k]=true; else delete state.fullSlots[k];
+      save();render();
+    });
+  });
+  document.querySelectorAll('.toggle-seat').forEach(el=>{
+    el.addEventListener('change',()=>{
+      const k=slotKey(el.dataset.date,el.dataset.time,el.dataset.seat);
+      if(el.checked) state.fullSlots[k]=true; else delete state.fullSlots[k];
+      save();render();
+    });
+  });
+}
+
+// ─── PIN認証 ─────────────────────────────────────────────
+async function checkPin(){
+  const input = document.getElementById('pin-field')?.value || state.pinInput;
+  const h = await sha256(input);
+  if(h === PIN_HASH){
+    state.adminUnlocked=true;state.pinError=false;state.pinInput='';render();
+  } else {
+    state.pinError=true;state.pinInput='';
+    const f = document.getElementById('pin-field');
+    if(f) f.value='';
+    render();
+  }
+}
+
+// ─── 起動 ─────────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>
