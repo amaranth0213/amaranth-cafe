@@ -536,7 +536,7 @@ function bindEvents(){
 
   on('f-name','input',e=>{state.form.name=e.target.value;});
   on('f-phone','input',e=>{state.form.phone=e.target.value;});
-  on('f-people','change',e=>{state.form.people=e.target.value;});
+  on('f-people','change',e=>{state.form.people=e.target.value;state.form.plateOrder=0;render();});
   on('f-note','input',e=>{state.form.note=e.target.value;});
   on('f-plate','change',e=>{state.form.plateOrder=parseInt(e.target.value)||0;});
 
