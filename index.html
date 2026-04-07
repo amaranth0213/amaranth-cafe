@@ -102,7 +102,7 @@ let state = {
   adminUnlocked: false,
   pinInput: '',
   pinError: false,
-  form: {date:'',time:'',seat:'',name:'',phone:'',people:'1',note:'',plateOrder:false},
+  form: {date:'',time:'',seat:'',name:'',phone:'',people:'1',note:'',plateOrder:0},
   formMsg: '',
   formMsgType: '',
   reservations: [],      // {id,date,time,seat,seatLabel,name,phone,people,note,isHold?}
@@ -338,12 +338,16 @@ ${dateOk && timeOk && seatOk ? `
     const cnt = state.plateCounts[form.date] || 0;
     const remaining = PLATE_LIMIT - cnt;
     const soldOut = remaining <= 0;
+    const maxOrder = Math.min(parseInt(form.people)||1, remaining);
+    const options = Array.from({length: maxOrder + 1}, (_,i) =>
+      `<option value="${i}"${form.plateOrder==i?' selected':''}>${i===0?'注文しない':i+'個'}</option>`
+    ).join('');
     return `<div style="margin-bottom:12px;padding:10px 12px;border:1px solid ${soldOut?'#f5c2c2':'#c8e6c9'};border-radius:8px;background:${soldOut?'#fff0f0':'#f1f8e9'}">
-      <label style="display:flex;align-items:center;gap:10px;cursor:${soldOut?'not-allowed':'pointer'};margin-bottom:0">
-        <input type="checkbox" id="f-plate" ${form.plateOrder?'checked':''} ${soldOut?'disabled':''} style="width:18px;height:18px;margin:0;cursor:${soldOut?'not-allowed':'pointer'}" />
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${soldOut?'0':'8px'}">
         <span style="font-size:14px;color:${soldOut?'#999':'#1a1a1a'}">「ほぼすべてプレート」を注文する</span>
-        <span style="font-size:12px;font-weight:500;color:${soldOut?'#e24b4a':'#1d9e75'};margin-left:auto;white-space:nowrap">${soldOut?'本日受付終了':'残り '+remaining+' 件'}</span>
-      </label>
+        <span style="font-size:12px;font-weight:500;color:${soldOut?'#e24b4a':'#1d9e75'};white-space:nowrap">${soldOut?'本日受付終了':'残り '+remaining+' 件'}</span>
+      </div>
+      ${soldOut ? '' : `<select id="f-plate" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;background:#fff">${options}</select>`}
     </div>`;
   })()}
   <label>アレルギー・苦手なもの・その他メモ</label>
@@ -534,7 +538,7 @@ function bindEvents(){
   on('f-phone','input',e=>{state.form.phone=e.target.value;});
   on('f-people','change',e=>{state.form.people=e.target.value;});
   on('f-note','input',e=>{state.form.note=e.target.value;});
-  on('f-plate','change',e=>{state.form.plateOrder=e.target.checked;});
+  on('f-plate','change',e=>{state.form.plateOrder=parseInt(e.target.value)||0;});
 
   document.querySelectorAll('.time-btn[data-time]').forEach(b=>{
     if(!b.disabled) b.addEventListener('click',()=>{state.form.time=b.dataset.time;state.form.seat='';render();});
@@ -567,7 +571,7 @@ function bindEvents(){
       seatLabel: seatObj?seatObj.label:'',
       name:f.name, phone:f.phone, people:f.people, note:f.note,
       isHold: false,
-      plateOrder: !!f.plateOrder,
+      plateOrder: parseInt(f.plateOrder)||0,
     };
 
     try{
@@ -584,8 +588,8 @@ function bindEvents(){
       }
       // ローカルキャッシュにも追加
       state.reservations.push({date:f.date,time:f.time,seat:f.seat,id:`${f.date}|${f.time}|${f.seat}`});
-      if(f.plateOrder) state.plateCounts[f.date] = (state.plateCounts[f.date]||0) + 1;
-      state.form={date:'',time:'',seat:'',name:'',phone:'',people:'1',note:'',plateOrder:false};
+      if(f.plateOrder > 0) state.plateCounts[f.date] = (state.plateCounts[f.date]||0) + parseInt(f.plateOrder);
+      state.form={date:'',time:'',seat:'',name:'',phone:'',people:'1',note:'',plateOrder:0};
       state.formMsg='ご予約を承りました。ありがとうございます 🌸';state.formMsgType='ok';
     }catch(err){
       state.formMsg='通信エラーが発生しました。時間をおいて再度お試しください';state.formMsgType='err';
