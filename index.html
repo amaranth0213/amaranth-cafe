@@ -28,6 +28,7 @@ textarea{resize:vertical;min-height:60px}
 .seat-btn:hover{background:#f5f5f5}
 .seat-btn.selected{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
 .seat-btn.full{background:#fff0f0;color:#e24b4a;border-color:#f5c2c2;cursor:not-allowed;opacity:0.7}
+.seat-btn.reserved{background:#f0f0f0;color:#999;border-color:#ddd;cursor:not-allowed;opacity:0.7}
 .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;margin-left:6px}
 .badge-ok{background:#e8f5f0;color:#1d9e75}
 .badge-full{background:#fff0f0;color:#e24b4a}
@@ -305,8 +306,9 @@ ${dateOk ? `
   <div class="time-grid">
     ${TIMES.map(t=>{
       const full = state.fullSlots[`${form.date}|${t}|ALL`];
-      const dup = !full && isDuplicate(form.date, t, form.seat) && form.seat;
-      return `<button class="time-btn${form.time===t?' selected':''}${full?' full':''}" data-time="${t}" ${full?'disabled':''}>${t}${full?'<br><span style="font-size:10px">満席</span>':''}</button>`;
+      const allReserved = !full && SEATS.every(s => isFull(form.date,t,s.id) || isDuplicate(form.date,t,s.id));
+      const disabled = full || allReserved;
+      return `<button class="time-btn${form.time===t?' selected':''}${disabled?' full':''}" data-time="${t}" ${disabled?'disabled':''}>${t}${full?'<br><span style="font-size:10px">満席</span>':allReserved?'<br><span style="font-size:10px">満席</span>':''}</button>`;
     }).join('')}
   </div>
 </div>` : ''}
@@ -316,7 +318,9 @@ ${dateOk && timeOk ? `
   <div class="seat-grid">
     ${SEATS.map(s=>{
       const full = isFull(form.date,form.time,s.id);
-      return `<button class="seat-btn${form.seat===s.id?' selected':''}${full?' full':''}" data-seat="${s.id}" ${full?'disabled':''}>${s.label}<br><span style="font-size:11px;color:inherit">${s.cap}名</span></button>`;
+      const reserved = !full && isDuplicate(form.date, form.time, s.id);
+      const disabled = full || reserved;
+      return `<button class="seat-btn${form.seat===s.id?' selected':''}${full?' full':''}${reserved?' reserved':''}" data-seat="${s.id}" ${disabled?'disabled':''}>${s.label}<br><span style="font-size:11px;color:inherit">${full?'満席':reserved?'予約済':s.cap+'名'}</span></button>`;
     }).join('')}
   </div>
 </div>` : ''}
