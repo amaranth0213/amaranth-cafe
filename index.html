@@ -85,12 +85,13 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbwrhSik-h9334tv0AlMH4ss
 
 // ─── 定数 ───────────────────────────────────────────────
 const MENU_ITEMS = [
-  {id:'m1', name:'濃厚抹茶のテリーヌ',              limit:8},
-  {id:'m2', name:'しっとりオレンジショコラケーキ',  limit:8},
-  {id:'m3', name:'お砂糖ゼロ低糖質のシフォンケーキ',limit:8},
-  {id:'m4', name:'お抹茶たらりのアフォガード',      limit:8},
-  {id:'m5', name:'やわらか抹茶あんの苺大福',        limit:10},
-  {id:'m6', name:'パリパリもなか',                  limit:8},
+  {id:'m1', name:'濃厚抹茶のテリーヌ',                                    limit:8},
+  {id:'m2', name:'しっとりオレンジショコラケーキ',                        limit:8},
+  {id:'m3', name:'お砂糖ゼロ低糖質のシフォンケーキ',                      limit:8},
+  {id:'m4', name:'お抹茶たらりのアフォガード',                            limit:8},
+  {id:'m5', name:'やわらか抹茶あんの苺大福',                              limit:10},
+  {id:'m6', name:'パリパリもなか',                                        limit:8},
+  {id:'m7', name:'てん茶の優しいおにぎりセット（卵焼き、熱々ほうじ茶付き）', limit:10},
 ];
 
 const SEATS = [
@@ -340,7 +341,11 @@ ${dateOk && timeOk && seatOk ? `
   <select id="f-people">
     ${(()=>{ const cap=(SEATS.find(s=>s.id===form.seat)||{cap:4}).cap; return Array.from({length:cap},(_,i)=>i+1).map(n=>`<option${form.people==n?' selected':''}>${n}</option>`).join(''); })()}
   </select>
-  <p style="font-size:12px;color:#888;margin-top:-8px;margin-bottom:12px">※ お席の必要でないお子様は人数に含める必要はございません。</p>
+  <div style="margin-bottom:14px;padding:10px 12px;border-radius:8px;background:#f5f0e8;border:1px solid #e0d4bc;font-size:12px;color:#5c4a1e;line-height:1.8">
+    お席の必要の無いお子様は含めずご予約ください。お子様のお支度の持ち込みOKです。<br>
+    ご予約の変更とキャンセルの受付はInstagramのメッセージからお知らせください。<br>
+    次のお客様がおいでにならない場合は、ごゆっくりお過ごしください。
+  </div>
   <div style="margin-bottom:12px;padding:12px 14px;border:1px solid #e0d9c8;border-radius:8px;background:#faf7f0">
     <p style="font-size:13px;font-weight:500;color:#5c4a1e;margin-bottom:10px">🍰 お菓子のご注文（前日までにお願いします）</p>
     ${MENU_ITEMS.map(item=>{
@@ -352,13 +357,15 @@ ${dateOk && timeOk && seatOk ? `
       const options = Array.from({length: maxOrder+1},(_,i)=>
         `<option value="${i}"${currentVal==i?' selected':''}>${i===0?'注文しない':i+'個'}</option>`
       ).join('');
-      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #ede8dc">
-        <span style="font-size:13px;color:${soldOut?'#bbb':'#1a1a1a'};flex:1">${esc(item.name)}</span>
-        <span style="font-size:11px;color:${soldOut?'#e24b4a':'#1d9e75'};margin:0 8px;white-space:nowrap">${soldOut?'本日終了':'残り'+remaining}</span>
-        ${soldOut
-          ? `<span style="font-size:12px;color:#bbb">受付終了</span>`
-          : `<select class="f-menu-item" data-menu-id="${item.id}" style="padding:4px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;min-width:90px">${options}</select>`
-        }
+      return `<div style="padding:8px 0;border-bottom:1px solid #ede8dc">
+        <div style="font-size:13px;color:${soldOut?'#bbb':'#1a1a1a'};margin-bottom:5px">${esc(item.name)}</div>
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px">
+          <span style="font-size:11px;color:${soldOut?'#e24b4a':'#1d9e75'}">${soldOut?'本日受付終了':'残り '+remaining+' 個'}</span>
+          ${soldOut
+            ? `<span style="font-size:12px;color:#bbb;padding:4px 8px;border:1px solid #eee;border-radius:6px">受付終了</span>`
+            : `<select class="f-menu-item" data-menu-id="${item.id}" style="padding:4px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;min-width:100px">${options}</select>`
+          }
+        </div>
       </div>`;
     }).join('')}
   </div>
