@@ -55,8 +55,8 @@ function doGet(e) {
         try { menuOrders = JSON.parse(String(row[8])||'{}'); } catch(e) {}
 
         slots.push({
-          date:      String(row[0]),
-          time:      String(row[1]),
+          date:      formatDateStr(row[0]),
+          time:      formatTimeStr(row[1]),
           seat:      String(row[2]),
           seatLabel: String(row[3]||''),
           name:      String(row[4]||''),
@@ -67,7 +67,7 @@ function doGet(e) {
         });
 
         // メニュー注文数を集計
-        const date = String(row[0]);
+        const date = formatDateStr(row[0]);
         Object.entries(menuOrders).forEach(([id, qty]) => {
           const q = Number(qty) || 0;
           if (q > 0) {
@@ -188,6 +188,30 @@ function sendHoldNotification(data) {
 ━━━━━━━━━━━━━━━━━`;
 
   GmailApp.sendEmail(NOTIFY_EMAIL, subject, body);
+}
+
+// ============================================================
+// 日付・時間フォーマット（スプレッドシートのDate型→文字列）
+// ============================================================
+function formatDateStr(val) {
+  if (!val) return '';
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return String(val);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
+}
+
+function formatTimeStr(val) {
+  if (!val) return '';
+  // すでに "9:30" 形式の文字列ならそのまま返す
+  if (typeof val === 'string' && /^\d+:\d+/.test(val)) return val;
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return String(val);
+  const h = d.getHours();
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${h}:${min}`;
 }
 
 // ============================================================
