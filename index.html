@@ -84,7 +84,14 @@ input:checked+.slider-t:before{transform:translateX(18px)}
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwrhSik-h9334tv0AlMH4ss9cNYUyIvFa2r2-vX0xjPBpTeI5rL7h59xQzqlZxhvdHW/exec';
 
 // ─── 定数 ───────────────────────────────────────────────
-const PLATE_LIMIT = 15; // ほぼすべてプレートの1日上限
+const MENU_ITEMS = [
+  {id:'m1', name:'濃厚抹茶のテリーヌ',              limit:8},
+  {id:'m2', name:'しっとりオレンジショコラケーキ',  limit:8},
+  {id:'m3', name:'お砂糖ゼロ低糖質のシフォンケーキ',limit:8},
+  {id:'m4', name:'お抹茶たらりのアフォガード',      limit:8},
+  {id:'m5', name:'やわらか抹茶あんの苺大福',        limit:10},
+  {id:'m6', name:'パリパリもなか',                  limit:8},
+];
 
 const SEATS = [
   {id:'s1',  label:'1人席',  cap:1},
@@ -103,15 +110,14 @@ let state = {
   adminUnlocked: false,
   pinInput: '',
   pinError: false,
-  form: {date:'',time:'',seat:'',name:'',phone:'',people:'1',note:'',plateOrder:0},
+  form: {date:'',time:'',seat:'',name:'',phone:'',people:'1',menuOrders:{}},
   formMsg: '',
   formMsgType: '',
-  reservations: [],      // {id,date,time,seat,seatLabel,name,phone,people,note,isHold?}
-  plateCounts: {},       // {date: count}  GASから取得したほぼプレート注文数
+  reservations: [],      // {id,date,time,seat,seatLabel,name,phone,people,isHold?}
+  menuCounts: {},        // {menuId: {date: count}}  GASから取得したメニュー注文数
   closedDates: {},       // {date: true}
   fullSlots: {},         // {'date|time|seat': true}
   availableDates: [],    // ['2026-04-14', ...]  管理者が設定した予約可能日
-  sweetPlateDesc: 'ほぼすべてのメニューの控えめsizeを載せたプレートでございます',
   adminTab: 'list',
   selectedAdminDate: '',
   holdForm: {date:'',time:'',seat:'',label:'スタッフ確保',people:'1'},
@@ -162,7 +168,7 @@ async function fetchBookedSlots(){
           date: s.date, time: s.time, seat: s.seat, id: `${s.date}|${s.time}|${s.seat}`
         }));
       }
-      if(json.plateCounts) state.plateCounts = json.plateCounts;
+      if(json.menuCounts) state.menuCounts = json.menuCounts;
     }
   }catch(e){}
 }
@@ -334,28 +340,28 @@ ${dateOk && timeOk && seatOk ? `
   <select id="f-people">
     ${(()=>{ const cap=(SEATS.find(s=>s.id===form.seat)||{cap:4}).cap; return Array.from({length:cap},(_,i)=>i+1).map(n=>`<option${form.people==n?' selected':''}>${n}</option>`).join(''); })()}
   </select>
-  <div class="plate-box">
-    <div class="plate-title">🍰 本日の甘いものプレート</div>
-    ${esc(state.sweetPlateDesc)}
+  <p style="font-size:12px;color:#888;margin-top:-8px;margin-bottom:12px">※ お席の必要でないお子様は人数に含める必要はございません。</p>
+  <div style="margin-bottom:12px;padding:12px 14px;border:1px solid #e0d9c8;border-radius:8px;background:#faf7f0">
+    <p style="font-size:13px;font-weight:500;color:#5c4a1e;margin-bottom:10px">🍰 お菓子のご注文（前日までにお願いします）</p>
+    ${MENU_ITEMS.map(item=>{
+      const dayCnt = (state.menuCounts[item.id]||{})[form.date]||0;
+      const remaining = item.limit - dayCnt;
+      const soldOut = remaining <= 0;
+      const maxOrder = Math.min(parseInt(form.people)||1, remaining);
+      const currentVal = form.menuOrders[item.id]||0;
+      const options = Array.from({length: maxOrder+1},(_,i)=>
+        `<option value="${i}"${currentVal==i?' selected':''}>${i===0?'注文しない':i+'個'}</option>`
+      ).join('');
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #ede8dc">
+        <span style="font-size:13px;color:${soldOut?'#bbb':'#1a1a1a'};flex:1">${esc(item.name)}</span>
+        <span style="font-size:11px;color:${soldOut?'#e24b4a':'#1d9e75'};margin:0 8px;white-space:nowrap">${soldOut?'本日終了':'残り'+remaining}</span>
+        ${soldOut
+          ? `<span style="font-size:12px;color:#bbb">受付終了</span>`
+          : `<select class="f-menu-item" data-menu-id="${item.id}" style="padding:4px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;min-width:90px">${options}</select>`
+        }
+      </div>`;
+    }).join('')}
   </div>
-  ${(()=>{
-    const cnt = state.plateCounts[form.date] || 0;
-    const remaining = PLATE_LIMIT - cnt;
-    const soldOut = remaining <= 0;
-    const maxOrder = Math.min(parseInt(form.people)||1, remaining);
-    const options = Array.from({length: maxOrder + 1}, (_,i) =>
-      `<option value="${i}"${form.plateOrder==i?' selected':''}>${i===0?'注文しない':i+'個'}</option>`
-    ).join('');
-    return `<div style="margin-bottom:12px;padding:10px 12px;border:1px solid ${soldOut?'#f5c2c2':'#c8e6c9'};border-radius:8px;background:${soldOut?'#fff0f0':'#f1f8e9'}">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${soldOut?'0':'8px'}">
-        <span style="font-size:14px;color:${soldOut?'#999':'#1a1a1a'}">「ほぼすべてプレート」を注文する</span>
-        <span style="font-size:12px;font-weight:500;color:${soldOut?'#e24b4a':'#1d9e75'};white-space:nowrap">${soldOut?'本日受付終了':'残り '+remaining+' 件'}</span>
-      </div>
-      ${soldOut ? '' : `<select id="f-plate" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;background:#fff">${options}</select>`}
-    </div>`;
-  })()}
-  <label>アレルギー・苦手なもの・その他メモ</label>
-  <textarea id="f-note" placeholder="アレルギーや苦手なものがあればお書きください">${esc(form.note)}</textarea>
   ${formMsg?`<div class="msg msg-${formMsgType}">${formMsg}</div>`:''}
   <button class="btn btn-primary" id="submit-btn" style="width:100%">予約を確定する</button>
 </div>` : ''}
@@ -419,7 +425,7 @@ ${resList.length===0?'<p style="color:#888;font-size:13px;text-align:center;padd
 ${resList.map((r)=>`
 <div class="res-card">
   <div class="res-header">${r.time}　${esc(r.seatLabel||'')}　${r.people}名　<span style="font-weight:400">${esc(r.name)}</span></div>
-  <div class="res-detail">${r.phone?'TEL: '+esc(r.phone):''}${r.note?'<br>注文メモ: '+esc(r.note):''}</div>
+  <div class="res-detail">${r.phone?'TEL: '+esc(r.phone):''}</div>
   <button class="btn btn-danger btn-sm" style="margin-top:8px" data-cancel-id="${r.id}">キャンセル</button>
 </div>`).join('')}`;
 }
@@ -540,9 +546,12 @@ function bindEvents(){
 
   on('f-name','input',e=>{state.form.name=e.target.value;});
   on('f-phone','input',e=>{state.form.phone=e.target.value;});
-  on('f-people','change',e=>{state.form.people=e.target.value;state.form.plateOrder=0;render();});
-  on('f-note','input',e=>{state.form.note=e.target.value;});
-  on('f-plate','change',e=>{state.form.plateOrder=parseInt(e.target.value)||0;});
+  on('f-people','change',e=>{state.form.people=e.target.value;state.form.menuOrders={};render();});
+  document.querySelectorAll('.f-menu-item').forEach(sel=>{
+    sel.addEventListener('change',e=>{
+      state.form.menuOrders[e.target.dataset.menuId]=parseInt(e.target.value)||0;
+    });
+  });
 
   document.querySelectorAll('.time-btn[data-time]').forEach(b=>{
     if(!b.disabled) b.addEventListener('click',()=>{state.form.time=b.dataset.time;state.form.seat='';render();});
@@ -580,7 +589,7 @@ function bindEvents(){
       seatLabel: seatObj?seatObj.label:'',
       name:f.name, phone:f.phone, people:f.people, note:f.note,
       isHold: false,
-      plateOrder: parseInt(f.plateOrder)||0,
+      menuOrders: f.menuOrders||{},
     };
 
     try{
@@ -597,8 +606,14 @@ function bindEvents(){
       }
       // ローカルキャッシュにも追加
       state.reservations.push({date:f.date,time:f.time,seat:f.seat,id:`${f.date}|${f.time}|${f.seat}`});
-      if(f.plateOrder > 0) state.plateCounts[f.date] = (state.plateCounts[f.date]||0) + parseInt(f.plateOrder);
-      state.form={date:'',time:'',seat:'',name:'',phone:'',people:'1',note:'',plateOrder:0};
+      // メニュー注文数をローカルキャッシュに反映
+      Object.entries(f.menuOrders||{}).forEach(([id,qty])=>{
+        if(qty>0){
+          if(!state.menuCounts[id]) state.menuCounts[id]={};
+          state.menuCounts[id][f.date]=(state.menuCounts[id][f.date]||0)+qty;
+        }
+      });
+      state.form={date:'',time:'',seat:'',name:'',phone:'',people:'1',menuOrders:{}};
       state.formMsg='ご予約を承りました。ありがとうございます 🌸';state.formMsgType='ok';
     }catch(err){
       state.formMsg='通信エラーが発生しました。時間をおいて再度お試しください';state.formMsgType='err';
