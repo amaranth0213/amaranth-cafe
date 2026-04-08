@@ -166,7 +166,10 @@ async function fetchBookedSlots(){
     if(json.success){
       if(json.slots){
         state.reservations = json.slots.map(s=>({
-          date: s.date, time: s.time, seat: s.seat, id: `${s.date}|${s.time}|${s.seat}`
+          date: s.date, time: s.time, seat: s.seat,
+          seatLabel: s.seatLabel||'', name: s.name||'', phone: s.phone||'',
+          people: s.people||'', menuOrders: s.menuOrders||{}, isHold: !!s.isHold,
+          id: `${s.date}|${s.time}|${s.seat}`
         }));
       }
       if(json.menuCounts) state.menuCounts = json.menuCounts;
@@ -302,8 +305,9 @@ function renderGuest(){
 </div>
 <p class="section-title">お茶と甘いもの　あまらんす　ご予約</p>
 <div class="info-box">
-  <p><strong>【お願いとお知らせ】</strong>「ほぼすべてのプレート」は数に限りがございます。また、大変恐縮ながら単品でのご所望のお品が品切れの場合もございますことご承知願いたく存じます。</p>
-  <p style="margin-top:6px">🕐 「ほぼすべてプレート」のご注文は<strong>前日まで</strong>にいただけますと幸いでございます。</p>
+  <p>お子様のお支度の持ち込みOKです。</p>
+  <p style="margin-top:6px">ご予約の変更とキャンセルの受付はInstagramのメッセージからお知らせください。</p>
+  <p style="margin-top:6px">次のお客様がおいでにならない場合は、ごゆっくりお過ごしください。</p>
 </div>
 ${noticeHtml}
 ${dateSection}
@@ -341,11 +345,6 @@ ${dateOk && timeOk && seatOk ? `
   <select id="f-people">
     ${(()=>{ const cap=(SEATS.find(s=>s.id===form.seat)||{cap:4}).cap; return Array.from({length:cap},(_,i)=>i+1).map(n=>`<option${form.people==n?' selected':''}>${n}</option>`).join(''); })()}
   </select>
-  <div style="margin-bottom:14px;padding:10px 12px;border-radius:8px;background:#f5f0e8;border:1px solid #e0d4bc;font-size:12px;color:#5c4a1e;line-height:1.8">
-    お席の必要の無いお子様は含めずご予約ください。お子様のお支度の持ち込みOKです。<br>
-    ご予約の変更とキャンセルの受付はInstagramのメッセージからお知らせください。<br>
-    次のお客様がおいでにならない場合は、ごゆっくりお過ごしください。
-  </div>
   <div style="margin-bottom:12px;padding:12px 14px;border:1px solid #e0d9c8;border-radius:8px;background:#faf7f0">
     <p style="font-size:13px;font-weight:500;color:#5c4a1e;margin-bottom:10px">🍰 お菓子のご注文（前日までにお願いします）</p>
     ${MENU_ITEMS.map(item=>{
@@ -429,12 +428,22 @@ function renderAdminList(){
   <div class="metric"><div class="metric-n">${total}</div><div class="metric-l">合計人数</div></div>
 </div>
 ${resList.length===0?'<p style="color:#888;font-size:13px;text-align:center;padding:1rem">この日の予約はありません</p>':''}
-${resList.map((r)=>`
-<div class="res-card">
-  <div class="res-header">${r.time}　${esc(r.seatLabel||'')}　${r.people}名　<span style="font-weight:400">${esc(r.name)}</span></div>
-  <div class="res-detail">${r.phone?'TEL: '+esc(r.phone):''}</div>
+${resList.map((r)=>{
+  const orders = r.menuOrders||{};
+  const orderedItems = MENU_ITEMS.filter(m=>(orders[m.id]||0)>0);
+  const menuText = orderedItems.length>0
+    ? orderedItems.map(m=>`${esc(m.name)}×${orders[m.id]}個`).join('、')
+    : 'なし';
+  return `
+<div class="res-card${r.isHold?' hold-card':''}">
+  <div class="res-header">${r.time}　${esc(r.seatLabel||'')}　${r.people}名　<span style="font-weight:400">${esc(r.name)}${r.isHold?'（確保枠）':' 様'}</span></div>
+  <div class="res-detail">
+    ${r.phone?'📞 '+esc(r.phone)+'<br>':''}
+    🍰 お菓子: ${menuText}
+  </div>
   <button class="btn btn-danger btn-sm" style="margin-top:8px" data-cancel-id="${r.id}">キャンセル</button>
-</div>`).join('')}`;
+</div>`;
+}).join('')}`;
 }
 
 function renderAdminHold(){
