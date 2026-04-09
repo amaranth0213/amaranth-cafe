@@ -70,6 +70,9 @@ input:checked+.slider-t:before{transform:translateX(18px)}
 .date-chip.locked{background:#f7f7f7;color:#bbb;border-color:#eee;cursor:not-allowed}
 .avail-date-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
 .avail-date-item:last-child{border-bottom:none}
+.admin-date-chip{padding:8px 12px;border:1px solid #ddd;border-radius:10px;background:#fff;cursor:pointer;font-size:12px;text-align:center;line-height:1.4;transition:all .15s}
+.admin-date-chip:hover{background:#f5f5f5}
+.admin-date-chip.selected{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
 .hold-form{background:#fff8ec;border:1px solid #ffe9b3;border-radius:10px;padding:14px;margin-bottom:1rem}
 .hold-form label{color:#7a5c00}
 .hold-form input,.hold-form select,.hold-form textarea{border-color:#ffe9b3}
@@ -414,14 +417,35 @@ ${state.adminTab==='settings' ? renderAdminSettings() : ''}`;
 
 function renderAdminList(){
   const today = getTodayStr();
-  const dateToShow = state.selectedAdminDate || today;
+
+  // 予約がある日付 + 予約可能日 をまとめてユニーク一覧
+  const resDates = [...new Set(state.reservations.map(r=>r.date))];
+  const allDates = [...new Set([...state.availableDates, ...resDates])].sort();
+
+  // 選択日: 未選択なら予約がある最初の日 or 今日
+  if(!state.selectedAdminDate){
+    state.selectedAdminDate = resDates.sort()[0] || today;
+  }
+  const dateToShow = state.selectedAdminDate;
   const resList = getReservationsFor(dateToShow);
   const total = resList.reduce((a,r)=>a+parseInt(r.people||1),0);
 
+  // 日付チップ
+  const dateChips = allDates.length > 0
+    ? allDates.map(d=>{
+        const cnt = state.reservations.filter(r=>r.date===d).length;
+        const isSelected = d === dateToShow;
+        return `<button class="admin-date-chip${isSelected?' selected':''}" data-admin-pick="${d}">
+          ${formatDate(d)}<br>
+          <span style="font-size:11px">${cnt>0?cnt+'件':'予約なし'}</span>
+        </button>`;
+      }).join('')
+    : '<p style="font-size:13px;color:#888">予約可能日が設定されていません</p>';
+
   return `
 <div class="card">
-  <label>日付を選択</label>
-  <input type="date" id="admin-date" value="${dateToShow}" />
+  <label style="margin-bottom:8px;display:block">日付を選択</label>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px">${dateChips}</div>
 </div>
 <div class="summary-grid">
   <div class="metric"><div class="metric-n">${resList.length}</div><div class="metric-l">予約件数</div></div>
