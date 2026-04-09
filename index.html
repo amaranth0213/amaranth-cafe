@@ -422,9 +422,9 @@ function renderAdminList(){
   const resDates = [...new Set(state.reservations.map(r=>r.date))];
   const allDates = [...new Set([...state.availableDates, ...resDates])].sort();
 
-  // 選択日: 未選択なら予約がある最初の日 or 今日
-  if(!state.selectedAdminDate){
-    state.selectedAdminDate = resDates.sort()[0] || today;
+  // 選択日: 未選択 or チップに存在しない日付なら予約がある最初の日 or 最初の予約可能日
+  if(!state.selectedAdminDate || !allDates.includes(state.selectedAdminDate)){
+    state.selectedAdminDate = resDates.sort()[0] || allDates[0] || today;
   }
   const dateToShow = state.selectedAdminDate;
   const resList = getReservationsFor(dateToShow);
