@@ -686,21 +686,34 @@ function bindEvents(){
     b.addEventListener('click',()=>{state.selectedAdminDate=b.dataset.adminPick;render();});
   });
   document.querySelectorAll('[data-cancel-id]').forEach(b=>{
-    b.addEventListener('click',()=>{
+    b.addEventListener('click',async()=>{
       const id = b.dataset.cancelId;
       const target = state.reservations.find(r=>r.id===id);
-      if(target){
-        const msg = target.isHold
-          ? `${target.name} の確保枠を解除しますか？`
-          : `${target.name}様（${target.time}）の予約をキャンセルしますか？`;
-        if(confirm(msg)){
-          state.reservations = state.reservations.filter(r=>r.id!==id);
-          save();render();
+      if(!target) return;
+      const msg = target.isHold
+        ? `${target.name} の確保枠を解除しますか？`
+        : `${target.name}様（${target.time}）の予約をキャンセルしますか？`;
+      if(!confirm(msg)) return;
+      try{
+        if(GAS_URL && !GAS_URL.startsWith('ここに')){
+          const res = await fetch(GAS_URL,{
+            method:'POST',
+            body:JSON.stringify({action:'cancel',date:target.date,time:target.time,seat:target.seat}),
+            redirect:'follow'
+          });
+          const json = await res.json();
+          if(!json.success){
+            alert('キャンセルに失敗しました: '+(json.error||''));
+            return;
+          }
         }
+        state.reservations = state.reservations.filter(r=>r.id!==id);
+        save();render();
+      }catch(err){
+        alert('通信エラーが発生しました。時間をおいて再度お試しください。');
       }
     });
   });
-
   // 席確保フォーム
   on('hold-date','change',e=>{state.holdForm.date=e.target.value;render();});
   document.querySelectorAll('[data-hold-time]').forEach(b=>{
