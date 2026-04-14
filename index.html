@@ -682,6 +682,9 @@ function bindEvents(){
 
   // 予約一覧: キャンセル
   on('admin-date','change',e=>{state.selectedAdminDate=e.target.value;render();});
+  document.querySelectorAll('[data-admin-pick]').forEach(b=>{
+    b.addEventListener('click',()=>{state.selectedAdminDate=b.dataset.adminPick;render();});
+  });
   document.querySelectorAll('[data-cancel-id]').forEach(b=>{
     b.addEventListener('click',()=>{
       const id = b.dataset.cancelId;
