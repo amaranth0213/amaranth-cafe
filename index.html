@@ -194,7 +194,9 @@ function isFull(date,time,seat){
 function isDateClosed(date){ return !!state.closedDates[date]; }
 
 function getReservationsFor(date){
-  return state.reservations.filter(r=>r.date===date);
+  const toMin = t => { const [h,m] = (t||'0:0').split(':').map(Number); return h*60+m; };
+  return state.reservations.filter(r=>r.date===date)
+    .sort((a,b) => toMin(a.time) - toMin(b.time));
 }
 
 // SHA-256 (Web Crypto API)
