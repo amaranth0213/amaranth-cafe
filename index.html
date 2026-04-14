@@ -644,8 +644,14 @@ function bindEvents(){
           state.formMsg=json.error||'予約に失敗しました';state.formMsgType='err';render();return;
         }
       }
-      // ローカルキャッシュにも追加
-      state.reservations.push({date:f.date,time:f.time,seat:f.seat,id:`${f.date}|${f.time}|${f.seat}`});
+      // ローカルキャッシュにも追加（全フィールドを保存）
+      const seatLabel = seatObj ? seatObj.label : '';
+      state.reservations.push({
+        date:f.date, time:f.time, seat:f.seat,
+        seatLabel, name:f.name, phone:f.phone,
+        people:f.people, menuOrders:f.menuOrders||{},
+        isHold:false, id:`${f.date}|${f.time}|${f.seat}`
+      });
       // メニュー注文数をローカルキャッシュに反映
       Object.entries(f.menuOrders||{}).forEach(([id,qty])=>{
         if(qty>0){
@@ -734,7 +740,12 @@ function bindEvents(){
           state.holdMsg=json.error||'確保に失敗しました';state.holdMsgType='err';render();return;
         }
       }
-      state.reservations.push({date:hf.date,time:hf.time,seat:hf.seat,id:`${hf.date}|${hf.time}|${hf.seat}`});
+      state.reservations.push({
+        date:hf.date, time:hf.time, seat:hf.seat,
+        seatLabel:seatObj?seatObj.label:'', name:hf.label||'スタッフ確保',
+        phone:'', people:hf.people||'1', menuOrders:{},
+        isHold:true, id:`${hf.date}|${hf.time}|${hf.seat}`
+      });
       state.holdMsg=`${formatDate(hf.date)} ${hf.time} ${seatObj?seatObj.label:''} を確保しました`;
       state.holdMsgType='ok';
       state.holdForm={date:'',time:'',seat:'',label:'スタッフ確保',people:'1'};
